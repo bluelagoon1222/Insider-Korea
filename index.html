@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>내부자 매매 CHECK — 임원·주요주주 장내매수 트래커</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --orange:#F58220; --orange-a:#CB6015; --orange-soft:#FAB072;
+  --blue:#043B72; --blue-mid:#0086B8;
+  --canvas:#FFFFFF; --soft:#ECEFF4; --subtle:#F7F8FA;
+  --hair:#CDCECB; --hair-soft:#E5E4E1;
+  --ink:#1A1A1A; --body:#3D3D3D; --muted:#6C6C6C; --muted2:#84888B;
+  --up:#2E8540; --down:#C62828; --warn:#D4A017;
+  --kr:'Noto Sans KR','Malgun Gothic',sans-serif;
+  --num:'Inter','SF Mono',monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--canvas);color:var(--body);font-family:var(--kr);font-size:15px;line-height:1.6;-webkit-text-size-adjust:100%}
+.wrap{max-width:1400px;margin:0 auto;padding:0 20px 80px}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+.num{font-family:var(--num);font-variant-numeric:tabular-nums}
+
+/* header */
+header{border-bottom:1px solid var(--hair);margin-bottom:24px}
+.hd{max-width:1400px;margin:0 auto;padding:22px 20px 18px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px}
+.hd h1{margin:0;font-size:27px;font-weight:700;color:var(--ink);letter-spacing:-.3px}
+.hd h1 span{color:var(--orange)}
+.hd .sub{font-size:13.5px;color:var(--muted);margin-top:4px}
+.hd .meta{margin-left:auto;font-size:12.5px;color:var(--muted2);text-align:right;font-family:var(--num)}
+
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:12px;margin-bottom:22px}
+.tile{border:1px solid var(--hair);border-radius:4px;padding:14px 16px;background:var(--canvas)}
+.tile .lab{font-size:12px;font-weight:500;color:var(--muted);letter-spacing:.4px}
+.tile .val{font-size:26px;font-weight:700;color:var(--ink);font-family:var(--num);line-height:1.15;margin-top:6px}
+.tile .val.o{color:var(--orange)} .tile .val.b{color:var(--blue)}
+.tile .foot{font-size:11.5px;color:var(--muted2);margin-top:2px}
+
+/* section */
+.sec{margin-top:36px}
+.sec-rule{height:1px;background:var(--orange);margin-bottom:14px}
+.sec-title{font-size:20px;font-weight:700;color:var(--ink);margin:0 0 4px}
+.sec-desc{font-size:13px;color:var(--muted);margin:0 0 14px}
+
+/* perf box */
+.perf{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.pcard{border:1px solid var(--hair);border-radius:4px;padding:16px}
+.pcard.hi{border-color:var(--orange);background:#FFF9F4}
+.pcard .t{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px}
+.prow{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px solid var(--hair-soft)}
+.prow:last-child{border-bottom:0}
+.prow b{font-family:var(--num);font-weight:600}
+
+/* controls */
+.ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px;padding:12px;background:var(--subtle);border:1px solid var(--hair-soft);border-radius:4px}
+.ctl label{font-size:12px;color:var(--muted);font-weight:500}
+select,input[type=text],input[type=number]{font-family:var(--kr);font-size:13px;padding:6px 8px;border:1px solid var(--hair);border-radius:2px;background:#fff;color:var(--ink)}
+.seg{display:inline-flex;border:1px solid var(--hair);border-radius:2px;overflow:hidden}
+.seg button{font-family:var(--kr);font-size:12.5px;padding:6px 11px;border:0;border-right:1px solid var(--hair);background:#fff;color:var(--muted);cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--orange);color:#fff;font-weight:500}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);cursor:pointer}
+.spacer{flex:1}
+.cnt{font-size:12px;color:var(--muted2);font-family:var(--num)}
+
+/* tabs */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--hair);margin-bottom:14px;overflow-x:auto}
+.tabs button{font-family:var(--kr);font-size:14px;font-weight:500;padding:10px 16px;border:0;background:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button.on{color:var(--ink);font-weight:700;border-bottom-color:var(--orange)}
+
+/* table */
+.tw{overflow-x:auto;border:1px solid var(--hair);border-radius:4px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--orange-soft);color:#1A1A1A;font-weight:700;font-size:12.5px;padding:9px 8px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--hair);cursor:pointer;position:sticky;top:0}
+th.r{text-align:right} td.r{text-align:right}
+th:hover{background:#F8A05A}
+td{padding:8px;border-bottom:1px solid var(--hair-soft);white-space:nowrap}
+tbody tr:hover{background:var(--subtle)}
+tbody tr.cl{background:#FFF9F4}
+tbody tr.cl:hover{background:#FFF2E6}
+.up{color:var(--up);font-weight:600} .down{color:var(--down);font-weight:600}
+.badge{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 5px;border-radius:2px;background:var(--orange);color:#fff;margin-left:5px;vertical-align:1px}
+.badge.g{background:var(--soft);color:var(--blue)}
+.mk{font-size:11px;color:var(--muted2)}
+.nm{font-weight:500;color:var(--ink);cursor:pointer}
+.nm:hover{color:var(--orange);text-decoration:underline}
+.empty{padding:36px;text-align:center;color:var(--muted2);font-size:13.5px}
+
+/* cluster cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.ccard{border:1px solid var(--hair);border-left:3px solid var(--orange);border-radius:4px;padding:14px}
+.ccard .h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ccard .h .n{font-size:16px;font-weight:700;color:var(--ink);cursor:pointer}
+.ccard .h .n:hover{color:var(--orange)}
+.ccard .h .g{font-size:16px;font-weight:700;font-family:var(--num)}
+.ccard .d{font-size:12px;color:var(--muted2);font-family:var(--num);margin:2px 0 8px}
+.ccard .g2{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:12.5px}
+.ccard .g2 span{color:var(--muted)}
+.ccard .g2 b{font-family:var(--num);color:var(--ink);font-weight:600}
+.ccard .ppl{margin-top:9px;padding-top:8px;border-top:1px solid var(--hair-soft);font-size:12px;color:var(--body);line-height:1.5}
+
+/* chart */
+.chart{border:1px solid var(--hair);border-radius:4px;padding:14px}
+svg{display:block;width:100%;height:auto}
+
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(26,26,26,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.ov.on{display:flex}
+.md{background:#fff;border-radius:4px;max-width:1000px;width:100%;max-height:86vh;overflow:auto}
+.md .mh{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid var(--hair);position:sticky;top:0;background:#fff}
+.md .mh h3{margin:0;font-size:18px;color:var(--ink)}
+.md .mb{padding:16px 18px}
+.x{border:0;background:none;font-size:22px;color:var(--muted);cursor:pointer;line-height:1}
+
+footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--hair);font-size:12px;color:var(--muted2);line-height:1.7}
+@media(max-width:640px){
+  .hd h1{font-size:21px} .hd .meta{margin-left:0;text-align:left;width:100%}
+  .tile .val{font-size:21px} .wrap{padding:0 12px 60px} .hd{padding:16px 12px 14px}
+  table{font-size:12px} td,th{padding:7px 6px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="hd">
+    <div>
+      <h1>내부자 매매 <span>CHECK</span></h1>
+      <div class="sub">임원·주요주주 장내매수 공시 트래커 — 복수 임원이 동시에 사들인 '클러스터 매수' 신호와 매수 후 성과</div>
+    </div>
+    <div class="meta" id="meta">불러오는 중…</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tiles" id="tiles"></div>
+
+  <div class="sec">
+    <div class="sec-rule"></div>
+    <h2 class="sec-title">클러스터 매수 vs 단독 매수 — 매수 후 성과</h2>
+    <p class="sec-desc">수집 전 기간 평균. 초과수익은 소속 시장 지수(KOSPI·KOSDAQ) 대비입니다. 표본이 쌓이는 중이므로 방향성 참고용으로만 보십시오.</p>
+    <div class="perf" id="perf"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-rule"></div>
+    <h2 class="sec-title">장내매수 조회</h2>
+    <div class="ctl">
+      <label>기간</label>
+      <div class="seg" id="segPeriod">
+        <button data-v="7">7일</button><button data-v="30" class="on">30일</button>
+        <button data-v="90">90일</button><button data-v="365">1년</button><button data-v="0">전체</button>
+      </div>
+      <label>시장</label>
+      <div class="seg" id="segMarket">
+        <button data-v="" class="on">전체</button><button data-v="KOSPI">KOSPI</button><button data-v="KOSDAQ">KOSDAQ</button>
+      </div>
+      <label>최소금액</label>
+      <select id="minAmt">
+        <option value="0">제한없음</option><option value="10000000">1천만원</option>
+        <option value="50000000">5천만원</option><option value="100000000">1억원</option>
+        <option value="500000000">5억원</option><option value="1000000000">10억원</option>
+      </select>
+      <label class="chk"><input type="checkbox" id="onlyCl"> 클러스터만</label>
+      <label class="chk"><input type="checkbox" id="onlyCeo"> 대표이사·등기임원만</label>
+      <input type="text" id="q" placeholder="종목명·코드·보고자 검색" style="width:190px">
+      <div class="spacer"></div>
+      <div class="cnt" id="cnt"></div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button data-t="cluster" class="on">클러스터 신호</button>
+      <button data-t="trades">전체 매수 내역</button>
+      <button data-t="stocks">종목별 집계</button>
+      <button data-t="sell">참고: 장내매도</button>
+    </div>
+    <div id="panel"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-rule"></div>
+    <h2 class="sec-title">월별 장내매수 추이</h2>
+    <div class="chart" id="chart"></div>
+  </div>
+
+  <footer>
+    데이터: DART 임원·주요주주 특정증권등 소유상황보고서(공시유형 D002) 원문에서 세부 변동내역을 추출해 취득방법이 '장내매수'인 건만 집계합니다.
+    주식매수선택권 행사·증여·상속·무상신주·장외매수는 제외됩니다. 주가는 네이버 금융 종가 기준이며, 취득단가가 공시에 없는 경우 변동일 종가로 추정(추정 표시)합니다.<br>
+    클러스터 정의: 동일 종목에서 30일 이내에 서로 다른 보고자 2명 이상이 장내매수한 경우. 수익률은 변동일 종가를 기준으로 1·5·20거래일 및 최근 종가까지의 변화입니다.<br>
+    본 페이지는 공시 자료를 기계적으로 집계한 참고자료이며 투자권유가 아닙니다. 공시 원문과 불일치가 있을 경우 DART 원문이 우선합니다.
+  </footer>
+</div>
+
+<div class="ov" id="ov"><div class="md">
+  <div class="mh"><h3 id="mdT"></h3><button class="x" onclick="closeMd()">&times;</button></div>
+  <div class="mb" id="mdB"></div>
+</div></div>
+
+<script>
+var TR=[], CL=[], SUM={}, ST={period:30,market:"",minAmt:0,onlyCl:false,onlyCeo:false,q:"",tab:"cluster",sort:{k:"rd",d:-1}};
+
+function n(v){return v==null?"—":Number(v).toLocaleString("ko-KR");}
+function won(v){
+  if(v==null||v===0) return "—";
+  if(v>=100000000) return (v/100000000).toFixed(v>=1000000000?0:1)+"억";
+  if(v>=10000) return Math.round(v/10000).toLocaleString("ko-KR")+"만";
+  return n(v);
+}
+function pc(v){
+  if(v==null) return '<span style="color:#84888B">—</span>';
+  var c=v>0?"up":(v<0?"down":"");
+  return '<span class="'+c+'">'+(v>0?"+":"")+v.toFixed(1)+"%</span>";
+}
+function dt(s){return s?s.slice(0,4)+"."+s.slice(4,6)+"."+s.slice(6,8):"—";}
+function dtS(s){return s?s.slice(2,4)+"."+s.slice(4,6)+"."+s.slice(6,8):"—";}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function dartUrl(rn){return "https://dart.fss.or.kr/dsaf001/main.do?rcpNo="+rn;}
+function naverUrl(c){return "https://finance.naver.com/item/main.naver?code="+c;}
+
+function cutoff(){
+  if(!ST.period) return "00000000";
+  var d=new Date(); d.setDate(d.getDate()-ST.period);
+  return d.toISOString().slice(0,10).replace(/-/g,"");
+}
+function isCeo(t){
+  var s=(t.pos||"")+(t.reg||"");
+  return /대표이사|등기임원|회장|사장|부회장/.test(s);
+}
+function filt(rows){
+  var c=cutoff(), q=ST.q.trim().toLowerCase();
+  return rows.filter(function(t){
+    if(t.d<c) return false;
+    if(ST.market && t.mk!==ST.market) return false;
+    if(ST.minAmt && (t.amt||0)<ST.minAmt) return false;
+    if(ST.onlyCl && !t.cl) return false;
+    if(ST.onlyCeo && !isCeo(t)) return false;
+    if(q){
+      var s=((t.n||"")+" "+(t.c||"")+" "+(t.r||"")+" "+(t.pos||"")).toLowerCase();
+      if(s.indexOf(q)<0) return false;
+    }
+    return true;
+  });
+}
+
+/* ---------- tiles & perf ---------- */
+function tiles(){
+  var f=filt(TR.filter(function(t){return t.side!=="S";}));
+  var amt=0, st={}, ppl={};
+  f.forEach(function(t){amt+=t.amt||0; st[t.c]=1; ppl[t.c+"|"+t.r]=1;});
+  var clst={}; f.forEach(function(t){if(t.cl) clst[t.c]=1;});
+  var lab=ST.period?("최근 "+ST.period+"일"):"전체 기간";
+  var h=[
+    ["매수 공시 건수",n(f.length),"o",lab],
+    ["매수 금액 합계",won(amt)+"원","b",lab],
+    ["매수 발생 종목",n(Object.keys(st).length),"",lab],
+    ["클러스터 종목",n(Object.keys(clst).length),"o","임원 2인 이상 동시매수"],
+    ["매수 임원 수",n(Object.keys(ppl).length),"",lab],
+    ["누적 수집 건수",n(SUM.n_trades),"","수집 시작 "+dt(SUM.start||"")]
+  ];
+  document.getElementById("tiles").innerHTML=h.map(function(x){
+    return '<div class="tile"><div class="lab">'+x[0]+'</div><div class="val '+x[2]+'">'+x[1]+'</div><div class="foot">'+x[3]+'</div></div>';
+  }).join("");
+}
+function perf(){
+  var p=SUM.perf||{}, c=p.cluster||{}, s=p.single||{};
+  function box(t,o,hi){
+    return '<div class="pcard'+(hi?" hi":"")+'"><div class="t">'+t+'</div>'
+      +'<div class="prow"><span>표본 건수</span><b>'+n(o.n)+'</b></div>'
+      +'<div class="prow"><span>1주 후 수익률</span><b>'+(o.w1==null?"—":(o.w1>0?"+":"")+o.w1+"%")+'</b></div>'
+      +'<div class="prow"><span>1주 후 지수대비</span><b>'+pcRaw(o.xw1)+'</b></div>'
+      +'<div class="prow"><span>1개월 후 수익률</span><b>'+(o.m1==null?"—":(o.m1>0?"+":"")+o.m1+"%")+'</b></div>'
+      +'<div class="prow"><span>1개월 후 지수대비</span><b>'+pcRaw(o.xm1)+'</b></div></div>';
+  }
+  document.getElementById("perf").innerHTML=
+    box("클러스터 매수 (임원 2인 이상)",c,true)+box("단독 매수 (임원 1인)",s,false)
+    +'<div class="pcard"><div class="t">해석</div><div style="font-size:12.5px;color:#3D3D3D">'
+    +'클러스터 매수의 지수대비 초과수익이 단독 매수보다 꾸준히 높다면, 복수 임원의 동시 매수는 내부 정보의 강도가 높은 신호로 해석할 여지가 있습니다. '
+    +'표본이 적은 기간에는 개별 대형 종목 한두 건이 평균을 좌우하므로 건수와 함께 보십시오.</div></div>';
+}
+function pcRaw(v){
+  if(v==null) return '<span style="color:#84888B">—</span>';
+  return '<span class="'+(v>0?"up":(v<0?"down":""))+'">'+(v>0?"+":"")+v+"%</span>";
+}
+
+/* ---------- tables ---------- */
+var COLS=[
+  ["rd","공시일",0],["n","종목",0],["r","보고자",0],["pos","직위",0],["d","변동일",0],
+  ["q","수량",1],["u","단가",1],["amt","금액",1],
+  ["d1","1일",1],["w1","1주",1],["m1","1개월",1],["nowr","현재",1],["xm1","1개월 지수대비",1],["_l","공시",0]
+];
+function sortRows(rows){
+  var k=ST.sort.k,d=ST.sort.d;
+  return rows.slice().sort(function(a,b){
+    var x=a[k],y=b[k];
+    if(x==null&&y==null) return 0;
+    if(x==null) return 1;
+    if(y==null) return -1;
+    if(typeof x==="string") return x<y?-d:(x>y?d:0);
+    return (x-y)*d;
+  });
+}
+function tradeTable(rows){
+  if(!rows.length) return '<div class="empty">조건에 맞는 공시가 없습니다. 기간을 늘려 보십시오.</div>';
+  var th=COLS.map(function(c){
+    var ar=ST.sort.k===c[0]?(ST.sort.d>0?" ▲":" ▼"):"";
+    return '<th class="'+(c[2]?"r":"")+'" onclick="doSort(\''+c[0]+'\')">'+c[1]+ar+'</th>';
+  }).join("");
+  var tb=sortRows(rows).slice(0,600).map(function(t){
+    return '<tr class="'+(t.cl?"cl":"")+'">'
+      +'<td class="num">'+dtS(t.rd)+'</td>'
+      +'<td><span class="nm" onclick="openMd(\''+t.c+'\')">'+esc(t.n)+'</span>'
+        +(t.cl?'<span class="badge">클러스터</span>':'')+'<div class="mk num">'+t.c+' · '+t.mk+'</div></td>'
+      +'<td>'+esc(t.r)+'</td>'
+      +'<td>'+esc(t.pos||t.reg||"")+'</td>'
+      +'<td class="num">'+dtS(t.d)+'</td>'
+      +'<td class="r num">'+n(t.q)+'</td>'
+      +'<td class="r num">'+n(t.u)+(t.uest?'<span style="color:#84888B">*</span>':'')+'</td>'
+      +'<td class="r num">'+won(t.amt)+'</td>'
+      +'<td class="r">'+pc(t.d1)+'</td><td class="r">'+pc(t.w1)+'</td>'
+      +'<td class="r">'+pc(t.m1)+'</td><td class="r">'+pc(t.nowr)+'</td>'
+      +'<td class="r">'+pc(t.xm1)+'</td>'
+      +'<td><a href="'+dartUrl(t.rn)+'" target="_blank" rel="noopener">DART</a></td></tr>';
+  }).join("");
+  return '<div class="tw"><table><thead><tr>'+th+'</tr></thead><tbody>'+tb+'</tbody></table></div>'
+    +(rows.length>600?'<div class="cnt" style="margin-top:8px">상위 600건만 표시합니다. 필터로 범위를 좁혀 보십시오.</div>':'')
+    +'<div class="cnt" style="margin-top:8px">* 취득단가가 공시에 기재되지 않아 변동일 종가로 추정한 건</div>';
+}
+
+function clusterPanel(){
+  var f=filt(TR.filter(function(t){return t.side!=="S" && t.cl;}));
+  var g={};
+  f.forEach(function(t){
+    var o=g[t.c]||(g[t.c]={c:t.c,n:t.n,mk:t.mk,rows:[],ppl:{},amt:0,qty:0});
+    o.rows.push(t); o.ppl[t.r]=1; o.amt+=t.amt||0; o.qty+=t.q||0;
+  });
+  var arr=Object.keys(g).map(function(k){
+    var o=g[k];
+    o.people=Object.keys(o.ppl).filter(Boolean);
+    o.rows.sort(function(a,b){return a.d<b.d?-1:1;});
+    o.from=o.rows[0].d; o.to=o.rows[o.rows.length-1].d;
+    o.avg=o.qty?Math.round(o.amt/o.qty):null;
+    o.last=o.rows[o.rows.length-1].last||null;
+    o.gain=(o.avg&&o.last)?Math.round((o.last/o.avg-1)*1000)/10:null;
+    return o;
+  }).filter(function(o){return o.people.length>=2;});
+  arr.sort(function(a,b){return a.to<b.to?1:(a.to>b.to?-1:b.amt-a.amt);});
+  document.getElementById("cnt").textContent=arr.length+"개 종목";
+  if(!arr.length) return '<div class="empty">해당 기간에 클러스터 매수 종목이 없습니다.</div>';
+  return '<div class="cards">'+arr.map(function(o){
+    return '<div class="ccard"><div class="h"><span class="n" onclick="openMd(\''+o.c+'\')">'+esc(o.n)+'</span>'
+      +'<span class="g '+(o.gain>0?"up":(o.gain<0?"down":""))+'">'+(o.gain==null?"—":(o.gain>0?"+":"")+o.gain+"%")+'</span></div>'
+      +'<div class="d">'+o.c+' · '+o.mk+' · '+dt(o.from)+(o.from!==o.to?" ~ "+dt(o.to):"")+'</div>'
+      +'<div class="g2"><span>매수 임원</span><b>'+o.people.length+'명 / '+o.rows.length+'건</b>'
+      +'<span>매수 금액</span><b>'+won(o.amt)+'원</b>'
+      +'<span>평균 매수가</span><b>'+n(o.avg)+'</b>'
+      +'<span>현재가</span><b>'+n(o.last)+'</b></div>'
+      +'<div class="ppl">'+o.people.map(esc).join(" · ")+'</div></div>';
+  }).join("")+'</div>';
+}
+
+function stockPanel(){
+  var f=filt(TR.filter(function(t){return t.side!=="S";}));
+  var g={};
+  f.forEach(function(t){
+    var o=g[t.c]||(g[t.c]={c:t.c,n:t.n,mk:t.mk,cnt:0,ppl:{},amt:0,qty:0,cl:0,to:"",last:null});
+    o.cnt++; o.ppl[t.r]=1; o.amt+=t.amt||0; o.qty+=t.q||0;
+    if(t.cl) o.cl=1;
+    if(t.d>o.to){o.to=t.d;}
+    if(t.last) o.last=t.last;
+  });
+  var arr=Object.keys(g).map(function(k){
+    var o=g[k]; o.np=Object.keys(o.ppl).filter(Boolean).length;
+    o.avg=o.qty?Math.round(o.amt/o.qty):null;
+    o.gain=(o.avg&&o.last)?Math.round((o.last/o.avg-1)*1000)/10:null;
+    return o;
+  });
+  arr.sort(function(a,b){return b.amt-a.amt;});
+  document.getElementById("cnt").textContent=arr.length+"개 종목";
+  if(!arr.length) return '<div class="empty">조건에 맞는 종목이 없습니다.</div>';
+  var tb=arr.slice(0,400).map(function(o){
+    return '<tr class="'+(o.cl?"cl":"")+'"><td><span class="nm" onclick="openMd(\''+o.c+'\')">'+esc(o.n)+'</span>'
+      +(o.cl?'<span class="badge">클러스터</span>':'')+'<div class="mk num">'+o.c+' · '+o.mk+'</div></td>'
+      +'<td class="r num">'+o.np+'</td><td class="r num">'+o.cnt+'</td>'
+      +'<td class="r num">'+n(o.qty)+'</td><td class="r num">'+won(o.amt)+'</td>'
+      +'<td class="r num">'+n(o.avg)+'</td><td class="r num">'+n(o.last)+'</td>'
+      +'<td class="r">'+pc(o.gain)+'</td><td class="num">'+dtS(o.to)+'</td>'
+      +'<td><a href="'+naverUrl(o.c)+'" target="_blank" rel="noopener">차트</a></td></tr>';
+  }).join("");
+  return '<div class="tw"><table><thead><tr><th>종목</th><th class="r">매수 임원</th><th class="r">건수</th>'
+    +'<th class="r">수량</th><th class="r">금액</th><th class="r">평균 매수가</th><th class="r">현재가</th>'
+    +'<th class="r">평균가 대비</th><th>최근 매수</th><th>링크</th></tr></thead><tbody>'+tb+'</tbody></table></div>';
+}
+
+function render(){
+  tiles();
+  var el=document.getElementById("panel"), h="";
+  if(ST.tab==="cluster") h=clusterPanel();
+  else if(ST.tab==="stocks") h=stockPanel();
+  else if(ST.tab==="sell"){
+    var f=filt(TR.filter(function(t){return t.side==="S";}));
+    document.getElementById("cnt").textContent=f.length+"건";
+    h=f.length?tradeTable(f):'<div class="empty">해당 기간 장내매도 공시가 없습니다.</div>';
+  }else{
+    var f2=filt(TR.filter(function(t){return t.side!=="S";}));
+    document.getElementById("cnt").textContent=f2.length+"건";
+    h=tradeTable(f2);
+  }
+  el.innerHTML=h;
+}
+function doSort(k){
+  if(ST.sort.k===k) ST.sort.d=-ST.sort.d; else {ST.sort.k=k; ST.sort.d=-1;}
+  render();
+}
+
+/* ---------- modal ---------- */
+function openMd(code){
+  var rows=TR.filter(function(t){return t.c===code;}).sort(function(a,b){return a.d<b.d?1:-1;});
+  if(!rows.length) return;
+  var nm=rows[0].n;
+  document.getElementById("mdT").innerHTML=esc(nm)+' <span class="num" style="font-size:13px;color:#6C6C6C">'+code+' · '+rows[0].mk+'</span>';
+  var tb=rows.map(function(t){
+    return '<tr class="'+(t.cl?"cl":"")+'"><td class="num">'+dt(t.d)+'</td><td>'+esc(t.r)+'</td>'
+      +'<td>'+esc(t.pos||t.reg||"")+'</td>'
+      +'<td>'+(t.side==="S"?'<span class="down">매도</span>':'<span class="up">매수</span>')+'</td>'
+      +'<td class="r num">'+n(t.q)+'</td><td class="r num">'+n(t.u)+'</td><td class="r num">'+won(t.amt)+'</td>'
+      +'<td class="r">'+pc(t.m1)+'</td><td class="r">'+pc(t.nowr)+'</td>'
+      +'<td><a href="'+dartUrl(t.rn)+'" target="_blank" rel="noopener">DART</a></td></tr>';
+  }).join("");
+  document.getElementById("mdB").innerHTML='<div style="margin-bottom:10px"><a href="'+naverUrl(code)+'" target="_blank" rel="noopener">네이버 금융에서 차트 보기</a></div>'
+    +'<div class="tw"><table><thead><tr><th>변동일</th><th>보고자</th><th>직위</th><th>구분</th>'
+    +'<th class="r">수량</th><th class="r">단가</th><th class="r">금액</th><th class="r">1개월</th><th class="r">현재</th><th>공시</th>'
+    +'</tr></thead><tbody>'+tb+'</tbody></table></div>';
+  document.getElementById("ov").classList.add("on");
+}
+function closeMd(){document.getElementById("ov").classList.remove("on");}
+document.getElementById("ov").addEventListener("click",function(e){if(e.target===this) closeMd();});
+
+/* ---------- chart ---------- */
+function chart(){
+  var m=SUM.months||{}, keys=Object.keys(m).sort();
+  if(!keys.length){document.getElementById("chart").innerHTML='<div class="empty">데이터 없음</div>';return;}
+  keys=keys.slice(-24);
+  var W=Math.max(560,keys.length*46), H=210, pad=34, bw=Math.min(30,(W-pad*2)/keys.length-8);
+  var max=0; keys.forEach(function(k){max=Math.max(max,m[k].cnt);});
+  max=max||1;
+  var s='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">';
+  for(var i=0;i<=4;i++){
+    var y=pad+(H-pad*1.6)*i/4;
+    s+='<line x1="'+pad+'" y1="'+y.toFixed(1)+'" x2="'+(W-8)+'" y2="'+y.toFixed(1)+'" stroke="#E5E4E1" stroke-width="1"/>';
+    s+='<text x="4" y="'+(y+4).toFixed(1)+'" font-size="10" fill="#84888B" font-family="Inter">'+Math.round(max*(4-i)/4)+'</text>';
+  }
+  keys.forEach(function(k,i){
+    var v=m[k].cnt, x=pad+ i*((W-pad-8)/keys.length)+4;
+    var h=(H-pad*1.6-pad)*(v/max), y=H-pad*0.6-h;
+    s+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw+'" height="'+Math.max(1,h).toFixed(1)+'" fill="#F58220"><title>'+k+' : '+v+'건 / '+won(m[k].amt)+'원</title></rect>';
+    if(keys.length<=18||i%2===0)
+      s+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(H-8)+'" font-size="9.5" fill="#6C6C6C" text-anchor="middle" font-family="Inter">'+k.slice(2,4)+"."+k.slice(4,6)+'</text>';
+  });
+  s+='</svg>';
+  document.getElementById("chart").innerHTML=s;
+}
+
+/* ---------- events ---------- */
+function seg(id,key,cast){
+  document.getElementById(id).addEventListener("click",function(e){
+    if(e.target.tagName!=="BUTTON") return;
+    [].forEach.call(this.children,function(b){b.classList.remove("on");});
+    e.target.classList.add("on");
+    ST[key]=cast?cast(e.target.dataset.v):e.target.dataset.v;
+    render();
+  });
+}
+seg("segPeriod","period",Number);
+seg("segMarket","market",null);
+document.getElementById("tabs").addEventListener("click",function(e){
+  if(e.target.tagName!=="BUTTON") return;
+  [].forEach.call(this.children,function(b){b.classList.remove("on");});
+  e.target.classList.add("on");
+  ST.tab=e.target.dataset.t; render();
+});
+document.getElementById("minAmt").addEventListener("change",function(){ST.minAmt=Number(this.value);render();});
+document.getElementById("onlyCl").addEventListener("change",function(){ST.onlyCl=this.checked;render();});
+document.getElementById("onlyCeo").addEventListener("change",function(){ST.onlyCeo=this.checked;render();});
+var qt;
+document.getElementById("q").addEventListener("input",function(){
+  var v=this.value; clearTimeout(qt); qt=setTimeout(function(){ST.q=v;render();},220);
+});
+
+/* ---------- load ---------- */
+function load(){
+  Promise.all([
+    fetch("data/trades.json?"+Date.now()).then(function(r){return r.json();}),
+    fetch("data/summary.json?"+Date.now()).then(function(r){return r.json();})
+  ]).then(function(a){
+    TR=(a[0].trades||[]); CL=(a[0].clusters||[]); SUM=a[1]||{};
+    document.getElementById("meta").innerHTML=
+      "갱신 "+esc(SUM.updated||"")+"<br>공시 수집 "+n(SUM.n_filings)+"건 · 원문 파싱 "+n(SUM.n_docs_ok)+"건"
+      +(SUM.pending&&SUM.pending.docs?" · 대기 "+n(SUM.pending.docs)+"건":"");
+    perf(); chart(); render();
+  }).catch(function(e){
+    document.getElementById("meta").textContent="데이터 로딩 실패";
+    document.getElementById("panel").innerHTML='<div class="empty">데이터 파일을 읽지 못했습니다. 첫 수집 작업(Actions)이 완료되면 표시됩니다.</div>';
+    console.error(e);
+  });
+}
+load();
+setInterval(load,600000);
+</script>
+</body>
+</html>
