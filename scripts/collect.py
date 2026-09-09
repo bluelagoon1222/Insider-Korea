@@ -40,12 +40,16 @@ if not KEY:
     sys.exit(1)
 
 START_DATE      = os.environ.get("START_DATE", "20250101")
-MAX_DART_CALLS  = int(os.environ.get("MAX_DART_CALLS", "6000"))
+MAX_DART_CALLS  = int(os.environ.get("MAX_DART_CALLS", "5000"))
+# the DART key is shared with Buyback-Korea (20,000 calls/day):
+# 3 weekday runs x 5,000 = 15,000 leaves headroom. Higher values are clamped.
+MAX_DART_CALLS  = min(MAX_DART_CALLS, 5000)
 TIME_BUDGET     = int(os.environ.get("TIME_BUDGET_MIN", "50")) * 60
 MAX_PRICE_FETCH = int(os.environ.get("MAX_PRICE_FETCH", "700"))
 FORCE_RESCAN    = os.environ.get("FORCE_RESCAN", "") == "1"
 SCAN_VERSION    = os.environ.get("SCAN_VERSION", "1")
 
+DOC_TIME_FRAC = 0.62        # share of the time budget the document stage may use
 RESCAN_DAYS   = 10          # always re-check the most recent N days
 CLUSTER_DAYS  = 30          # cluster window
 CLUSTER_MIN   = 2           # distinct insiders required
@@ -495,8 +499,9 @@ def collect_docs(filings, docs):
     log("documents to fetch:", len(todo))
 
     done = err = 0
+    doc_deadline = TIME_BUDGET * DOC_TIME_FRAC
     for rn in todo:
-        if out_of_time() or CALLS["dart"] >= MAX_DART_CALLS:
+        if elapsed() > doc_deadline or CALLS["dart"] >= MAX_DART_CALLS:
             log("  stop document fetch (budget). remaining:", len(todo) - done - err)
             break
         xml, e = fetch_document(rn)
@@ -625,8 +630,16 @@ def ret_after(ser, dates, d0, offset):
 OFFSETS = [("d1", 1), ("w1", 5), ("m1", 20), ("nowr", -1)]
 
 
+def date_window():
+    lo = (dt.datetime.strptime(START_DATE, "%Y%m%d") - dt.timedelta(days=200)).strftime("%Y%m%d")
+    hi = (dt.datetime.utcnow() + dt.timedelta(hours=9, days=7)).strftime("%Y%m%d")
+    return lo, hi
+
+
 def build(filings, docs):
     trades = []
+    d_lo, d_hi = date_window()
+    dropped = 0
     for rn, f in filings.items():
         doc = docs.get(rn)
         if not doc or doc.get("st") != "ok":
@@ -642,6 +655,11 @@ def build(filings, docs):
             if not q:
                 continue
             q = abs(q)
+            if not (d_lo <= r["d"] <= d_hi):
+                # a misaligned column picked up some other date (grant date,
+                # birth month, ...) - out-of-range rows are discarded
+                dropped += 1
+                continue
             trades.append({
                 "side": r["side"],
                 "rn": rn, "rd": f["rd"], "d": r["d"],
@@ -656,7 +674,7 @@ def build(filings, docs):
                 "aft": int(r["aft"]) if r.get("aft") else None,
             })
 
-    log("buy trade rows:", len(trades))
+    log("trade rows:", len(trades), "| dropped out-of-range dates:", dropped)
 
     codes = sorted({t["c"] for t in trades})
     ensure_prices(codes, START_DATE)
@@ -783,6 +801,7 @@ def build(filings, docs):
         "months": months,
         "calls": CALLS,
         "runtime_sec": int(elapsed()),
+        "dropped_dates": dropped,
         "pending": {
             "docs": sum(1 for rn in filings if docs.get(rn, {}).get("v") != SCAN_VERSION),
             "errors": {},
