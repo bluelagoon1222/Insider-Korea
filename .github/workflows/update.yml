@@ -1,0 +1,72 @@
+name: collect insider trades
+
+on:
+  schedule:
+    - cron: "10 0 * * 1-5"
+    - cron: "10 7 * * 1-5"
+    - cron: "10 11 * * 1-5"
+    - cron: "10 1 * * 0,6"
+    - cron: "10 5 * * 0,6"
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: "collection start date (YYYYMMDD)"
+        required: false
+        default: ""
+      force_rescan:
+        description: "rescan filing list from start date (1 = yes)"
+        required: false
+        default: ""
+      scan_version:
+        description: "bump to re-parse every document"
+        required: false
+        default: ""
+      max_dart_calls:
+        description: "DART API call budget for this run"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: install
+        run: pip install requests
+
+      - name: collect
+        env:
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+          START_DATE: ${{ github.event.inputs.start_date || '20250101' }}
+          FORCE_RESCAN: ${{ github.event.inputs.force_rescan }}
+          SCAN_VERSION: ${{ github.event.inputs.scan_version || '1' }}
+          MAX_DART_CALLS: ${{ github.event.inputs.max_dart_calls || '6000' }}
+          TIME_BUDGET_MIN: "50"
+          MAX_PRICE_FETCH: "700"
+        run: python scripts/collect.py
+
+      - name: commit
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A data
+          if git diff --staged --quiet; then
+            echo "no change"
+          else
+            git commit -m "data update"
+            git pull --rebase --autostash || true
+            git push
+          fi
