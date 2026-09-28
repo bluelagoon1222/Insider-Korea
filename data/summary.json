@@ -1,5 +1,5 @@
 {
-"updated": "2026-09-29 00:23 KST",
+"updated": "2026-09-29 03:38 KST",
 "start": "20250101",
 "scanned_to": "20260929",
 "n_filings": 30263,
@@ -142,10 +142,10 @@
 }
 },
 "calls": {
-"dart": 18,
+"dart": 8,
 "naver": 702
 },
-"runtime_sec": 197,
+"runtime_sec": 236,
 "dropped_dates": 904,
 "pending": {
 "docs": 0,
