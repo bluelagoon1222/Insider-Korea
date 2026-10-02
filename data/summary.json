@@ -1,15 +1,15 @@
 {
-"updated": "2026-10-02 22:52 KST",
+"updated": "2026-10-03 01:40 KST",
 "start": "20250101",
-"scanned_to": "20261002",
+"scanned_to": "20261003",
 "n_filings": 30501,
 "n_docs_ok": 30489,
 "n_trades": 41104,
 "n_sells": 20193,
 "n_stocks": 1336,
-"r30_cnt": 1189,
-"r30_amt": 150611260464,
-"r30_stocks": 214,
+"r30_cnt": 1118,
+"r30_amt": 142038284963,
+"r30_stocks": 206,
 "n_clusters": 576,
 "perf": {
 "cluster": {
@@ -146,10 +146,10 @@
 }
 },
 "calls": {
-"dart": 72,
-"naver": 700
+"dart": 15,
+"naver": 702
 },
-"runtime_sec": 219,
+"runtime_sec": 209,
 "dropped_dates": 904,
 "pending": {
 "docs": 0,
