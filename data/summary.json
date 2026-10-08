@@ -1,8 +1,8 @@
 {
-"updated": "2026-10-08 14:55 KST",
+"updated": "2026-10-08 23:36 KST",
 "start": "20250101",
 "scanned_to": "20261008",
-"n_filings": 30689,
+"n_filings": 30751,
 "n_docs_ok": 30670,
 "n_trades": 42563,
 "n_sells": 21476,
@@ -14,8 +14,8 @@
 "perf": {
 "cluster": {
 "n": 16637,
-"m1": 2.05,
-"xm1": 2.32,
+"m1": 2.04,
+"xm1": 2.31,
 "w1": 0.56,
 "xw1": 0.71
 },
@@ -146,15 +146,16 @@
 }
 },
 "calls": {
-"dart": 46,
-"naver": 702
+"dart": 77,
+"naver": 700
 },
-"runtime_sec": 261,
+"runtime_sec": 242,
 "dropped_dates": 904,
 "pending": {
 "docs": 0,
 "errors": {
-"dart014": 19
+"dart014": 19,
+"dart800": 62
 }
 }
 }
