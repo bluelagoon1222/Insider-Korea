@@ -1,15 +1,15 @@
 {
-"updated": "2026-10-15 21:41 KST",
+"updated": "2026-10-16 00:37 KST",
 "start": "20250101",
-"scanned_to": "20261015",
+"scanned_to": "20261016",
 "n_filings": 30946,
 "n_docs_ok": 30862,
-"n_trades": 42865,
+"n_trades": 42866,
 "n_sells": 21566,
 "n_stocks": 1346,
-"r30_cnt": 1248,
-"r30_amt": 597981067743,
-"r30_stocks": 227,
+"r30_cnt": 1155,
+"r30_amt": 538791843553,
+"r30_stocks": 221,
 "n_clusters": 582,
 "perf": {
 "cluster": {
@@ -20,17 +20,17 @@
 "xw1": 0.74
 },
 "single": {
-"n": 26055,
+"n": 26056,
 "m1": 2.54,
 "xm1": -0.68,
 "w1": 0.87,
-"xw1": -0.26
+"xw1": -0.25
 }
 },
 "months": {
 "202610": {
-"cnt": 349,
-"amt": 153109279307
+"cnt": 350,
+"amt": 153108930307
 },
 "202609": {
 "cnt": 1821,
@@ -146,11 +146,11 @@
 }
 },
 "calls": {
-"dart": 40,
-"naver": 700
+"dart": 16,
+"naver": 702
 },
-"runtime_sec": 261,
-"dropped_dates": 904,
+"runtime_sec": 202,
+"dropped_dates": 903,
 "pending": {
 "docs": 0,
 "errors": {
