@@ -1,7 +1,7 @@
 {
-"updated": "2026-10-20 21:43 KST",
+"updated": "2026-10-21 00:47 KST",
 "start": "20250101",
-"scanned_to": "20261020",
+"scanned_to": "20261021",
 "n_filings": 31095,
 "n_docs_ok": 31009,
 "n_trades": 43156,
@@ -22,7 +22,7 @@
 "single": {
 "n": 26226,
 "m1": 2.51,
-"xm1": -0.62,
+"xm1": -0.63,
 "w1": 0.88,
 "xw1": -0.21
 }
@@ -146,10 +146,10 @@
 }
 },
 "calls": {
-"dart": 33,
-"naver": 700
+"dart": 4,
+"naver": 702
 },
-"runtime_sec": 195,
+"runtime_sec": 545,
 "dropped_dates": 903,
 "pending": {
 "docs": 0,
